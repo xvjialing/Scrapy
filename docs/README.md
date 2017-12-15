@@ -109,3 +109,137 @@ scrapy crawl jobbole
 | //span \| //ul          | 选取文档中的span元素与ul元素                        |
 | article/div/p \| //span | 选取所有属于article元素的div元素的p元素以及文档中的所有的span元素 |
 
+### scrapy shell调试
+
+在终端程序中使用shell命令调试
+
+```Shell
+scrapy shell http://blog.jobbole.com/112809/
+```
+
+ 结果是：
+
+```shell
+2017-12-15 13:54:56 [scrapy.extensions.telnet] DEBUG: Telnet console listening on 127.0.0.1:6023
+2017-12-15 13:54:56 [scrapy.core.engine] INFO: Spider opened
+2017-12-15 13:54:56 [scrapy.core.engine] DEBUG: Crawled (200) <GET http://blog.jobbole.com/112809/> (referer: None)
+[s] Available Scrapy objects:
+[s]   scrapy     scrapy module (contains scrapy.Request, scrapy.Selector, etc)
+[s]   crawler    <scrapy.crawler.Crawler object at 0x103f4d080>
+[s]   item       {}
+[s]   request    <GET http://blog.jobbole.com/112809/>
+[s]   response   <200 http://blog.jobbole.com/112809/>
+[s]   settings   <scrapy.settings.Settings object at 0x104d4d8d0>
+[s]   spider     <JobboleSpider 'jobbole' at 0x10605dc88>
+[s] Useful shortcuts:
+[s]   fetch(url[, redirect=True]) Fetch URL and update local objects (by default, redirects are followed)
+[s]   fetch(req)                  Fetch a scrapy.Request and update local objects 
+[s]   shelp()           Shell help (print this help)
+[s]   view(response)    View response in a browser
+```
+
+使用"response"命令调试
+
+```shell
+>>> titile = response.xpath('//div[@class="entry-header"]/h1/text()')
+>>> titile
+[<Selector xpath='//div[@class="entry-header"]/h1/text()' data='谈谈程序员的离职和跳槽'>]
+```
+
+获取具体值：
+
+```shell
+>>> titile.extract()
+['谈谈程序员的离职和跳槽']
+>>> titile.extract()[0]
+'谈谈程序员的离职和跳槽'
+```
+
+extract()函数获取到的值是数组，取第一个值就能得到具体值。
+
+```shell
+>>> titile.xpath("//*")
+[]
+>>> titile
+[<Selector xpath='//div[@class="entry-header"]/h1/text()' data='谈谈程序员的离职和跳槽'>]
+```
+
+在调用xpath方法得到的值还可以继续使用xpath，但一旦使用extract()得到具体值后就无法再使用xpath()函数。
+
+获取网页上的文章日期：
+
+```shell
+>>> text = response.xpath("//p[@class='entry-meta-hide-on-mobile']/text()").extract()[0].replace("·","").strip()
+>>> text
+'2017/12/09'
+```
+
+在获取到的某个节点的extract()后，得到的值会忽略这个节点内部的节点，replace()函数用于替换字符，strip()函数用来除去换行符。
+
+获取点赞数：
+
+网页源代码：
+
+```html
+<span data-post-id="112809" class=" btn-bluet-bigger href-style vote-post-up   register-user-only "><i class="fa  fa-thumbs-o-up"></i> <h10 id="112809votetotal">1</h10> 赞</span>
+```
+
+shell命令：
+
+```shell
+>>> star = response.xpath("//span[@class='vote-post-up']")
+>>> star
+[]
+```
+
+因为class中不止一个，单取"vote-post-up"是不对的，所以取到的值是空的。
+
+```shell
+>>> star = response.xpath("//span[contains(@class,'vote-post-up')]")
+>>> star
+[<Selector xpath="//span[contains(@class,'vote-post-up')]" data='<span data-post-id="112809" class=" btn-'>]
+>>> star = response.xpath("//span[contains(@class,'vote-post-up')]/h10/text()").extract()[0]
+>>> star
+'1'
+```
+
+这时应该使用contains函数，这样就能取到了。
+
+获取收藏数：
+
+```shell
+>>> prase_nums = response.xpath("//span[contains(@class,'bookmark-btn')]/text()").extract()[0]
+>>> prase_nums
+' 5 收藏'
+>>> import re
+>>> prase_nums = re.match(".*(\d+).*", prase_nums).group(1)
+>>> prase_nums
+'5'
+```
+
+获取到的值通过正则表达式进行过滤。
+
+获取评论数：
+
+```shell
+>>> fav_nums = re.match(".*(\d+).*", response.xpath("//*[@id='post-112809']/div[3]/div[3]/a/span/text()").extract()[0]).group(1)
+>>> fav_nums
+'5'
+```
+
+## css选择器
+
+| 表达式                            | 说明                                 |
+| ------------------------------ | ---------------------------------- |
+| *                              | 选择所有节点                             |
+| \#container                    | 选择id为container的节点                  |
+| .container                     | 选择所有class包含container的节点            |
+| li a                           | 选择所有li下的所有a节点                      |
+| ul + p                         | 选择ul后面的第一个p元素                      |
+| div#container > ul             | 选择id为container的div的第一个ul子元素        |
+| ul ~ p                         | 选取与ul相邻的所有p元素                      |
+| a[title]                       | 选取所有有title属性的a元素                   |
+| a\[href="http://jobbole.com"\] | 选取所有href属性为http://jobbole.com值的a元素 |
+
+
+
