@@ -4,6 +4,7 @@ import re
 from scrapy.http import Request
 from urllib import parse
 
+from articalScrapy.items import JobBoleArticleItem
 
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
@@ -19,11 +20,19 @@ class JobboleSpider(scrapy.Spider):
         """
 
         # 解析列表页中的所有文章url，并交给scrapy下载后进行解析
-        post_urls = response.css("#archive .floated-thumb div.post-thumb a::attr(href)").extract()  # ::attr(href) 获取href属性
-        for post_url in post_urls:
-            yield Request(url=post_url, callback=self.parse_detail)
-            # yield Request(url=parse.urljoin(response.url + post_url), callback=self.parse_detail)
-            print(post_url)
+        # post_urls = response.css("#archive .floated-thumb div.post-thumb a::attr(href)").extract()  # ::attr(href) 获取href属性
+        # for post_url in post_urls:
+        #     yield Request(url=post_url, callback=self.parse_detail)
+        #     # yield Request(url=parse.urljoin(response.url + post_url), callback=self.parse_detail)
+        #     print(post_url)
+
+        #增加获取标题图片
+        post_nodes=response.css("#archive .floated-thumb div.post-thumb a")
+        for post_node in post_nodes:
+            img_url= post_node.css("img::attr(src)").extract_first("")
+            post_url = post_node.css("::attr(href)").extract_first("")
+            print(parse.urljoin(response.url,post_url))
+            yield Request(url=parse.urljoin(response.url,post_url),callback=self.parse_detail,meta={"front_img_url":img_url})
 
         #提取下一页url并交给scrapy下载
         next_urls = response.css(".next.page-numbers::attr(href)").extract_first("")
@@ -32,6 +41,9 @@ class JobboleSpider(scrapy.Spider):
             yield Request(url=next_urls, callback=self.parse)
 
     def parse_detail(self, response):
+
+        article = JobBoleArticleItem()
+
         # 提取文章具体字段
 
         # xpath选择器
@@ -50,23 +62,35 @@ class JobboleSpider(scrapy.Spider):
         # tags = ",".join(tag_list)
 
         #css 选择器
-        title2 = response.css(".entry-header h1::text").extract()[0]   # ::text是css伪类选择器
-        create_date2 = response.css("p.entry-meta-hide-on-mobile::text").extract()[0].replace("·", "").strip()
-        star2 =response.css("span.vote-post-up h10::text").extract()[0]
-        pre_bookmark=response.css("span.bookmark-btn::text").extract()[0]
-        re_match= re.match(".*(\d+).*", pre_bookmark)
+        front_img_url = response.meta.get("front_img_url","")   # 文章封面图
+        title = response.css(".entry-header h1::text").extract()[0]   # ::text是css伪类选择器
+        create_date = response.css("p.entry-meta-hide-on-mobile::text").extract()[0].replace("·", "").strip()
+        praise_nums =response.css("span.vote-post-up h10::text").extract()[0]
+        re_match= re.match(".*(\d+).*", response.css("span.bookmark-btn::text").extract()[0])
         if re_match:
-            prase_nums2=re_match.group(1)
+            fav_nums=int(re_match.group(1))
         else:
-            prase_nums2 = 0
-        pre_comment_nums=response.css("a[href='#article-comment'] span::text").extract()[0]
-        re_match = re.match(".*(\d+).*", pre_comment_nums)
+            fav_nums = 0
+        re_match = re.match(".*(\d+).*", response.css("a[href='#article-comment'] span::text").extract()[0])
         if re_match:
-            fav_nums2 =re_match.group(1)
+            comment_nums =re_match.group(1)
         else:
-            fav_nums2 = 0
-        content2 = response.css("div.entry").extract()[0]
-        tag_list2 = response.css("p.entry-meta-hide-on-mobile a::text").extract()
-        tag_list2 = [element for element in tag_list2 if not element.strip().endswith("评论")]
-        tags2 = ",".join(tag_list2)
+            comment_nums = 0
+        content = response.css("div.entry").extract()[0]
+        tag_list = response.css("p.entry-meta-hide-on-mobile a::text").extract()
+        tag_list = [element for element in tag_list if not element.strip().endswith("评论")]
+        tags = ",".join(tag_list)
+
+        article["title"]=title
+        article["url"]= response.url
+        article["create_date"]= create_date
+        article["front_img_url"]= front_img_url
+        article["praise_nums"]= praise_nums
+        article["comment_nums"]= comment_nums
+        article["fav_nums"]= fav_nums
+        article["tags"]= tags
+        article["content"]= content
+
+
+        yield article
         pass

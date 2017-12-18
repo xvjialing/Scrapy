@@ -385,5 +385,105 @@ class JobboleSpider(scrapy.Spider):
         pass
 ```
 
+***
+
+## 数据存储
+
+在items.py文件中定义item:
+
+```python
+class ArticleItem(scrapy.Item):
+    title = scrapy.Field()
+    create_date = scrapy.Field()
+    praise_nums = scrapy.Field()
+    fav_nums = scrapy.Field()
+    comment_nums = scrapy.Field()
+    content = scrapy.Field()
+    tags = scrapy.Field()
+```
+
+修改爬虫，加入标题图片链接：
+
+```python
+#增加获取标题图片
+post_nodes=response.css("#archive .floated-thumb div.post-thumb a")
+for post_node in post_nodes:
+    img_url= post_node.css("img::attr(src)").extract_first("")
+    post_url = post_node.css("::attr(href)").extract_first("")
+    print(parse.urljoin(response.url,post_url))
+    yield Request(url=parse.urljoin(response.url,post_url),callback=self.parse_detail,meta={"front_img_url":img_url})
+```
+
+在爬虫中加入item：
+
+```python
+from articalScrapy.items import JobBoleArticleItem  # 导入item
+
+def parse_detail(self, response):
+    article = JobBoleArticleItem()  # 实例化item
+	…………
+    
+    article["title"]=title
+    article["url"]= response.url
+    article["create_date"]= create_date
+    article["front_img_url"]= front_img_url
+    article["praise_nums"]= praise_nums
+    article["comment_nums"]= comment_nums
+    article["fav_nums"]= fav_nums
+    article["tags"]= tags
+    article["content"]= content
+
+    yield article
+
+```
+
+开启图片下载：
+
+在setting.py文件中：
+
+```python
+ITEM_PIPELINES = {   #此处代码本来就用，只需要解除注释
+   'articalScrapy.pipelines.ArticalscrapyPipeline': 300,
+   'scrapy.pipelines.images.ImagesPipeline': 1, # 设置image的pipeline,数字越小优先级越高
+}
+IMAGES_URLS_FIELD = "front_img_url"  #设置图片的参数
+project_dir=os.path.abspath(os.path.dirname(__file__)) #获取父路径
+IMAGES_STORE = os.path.join(project_dir,"imgs") #设置最终的图片存储路径
+```
+
+此时运行还是会报错：
+
+```shell
+  File "/Users/xvjialing/python-virtualenv/articalScrapy/lib/python3.6/site-packages/scrapy/pipelines/images.py", line 15, in <module>
+    from PIL import Image
+ModuleNotFoundError: No module named 'PIL'
+```
+
+显示缺少模块：
+
+```shell
+$ pip install pillow
+Collecting pillow
+  Downloading Pillow-4.3.0-cp36-cp36m-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl (3.5MB)
+    100% |████████████████████████████████| 3.6MB 132kB/s 
+Collecting olefile (from pillow)
+  Downloading olefile-0.44.zip (74kB)
+    100% |████████████████████████████████| 81kB 194kB/s 
+Building wheels for collected packages: olefile
+  Running setup.py bdist_wheel for olefile ... done
+  Stored in directory: Caches/pip/wheels/20/58/49/cc7bd00345397059149a10b0259ef38b867935ea2ecff99a9b
+Successfully built olefile
+Installing collected packages: olefile, pillow
+Successfully installed olefile-0.44 pillow-4.3.0
+```
+
+此时运行还是会报错：
+
+```shell
+raise ValueError('Missing scheme in request url: %s' % self._url)
+```
+
+
+
 
 
