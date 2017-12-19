@@ -483,6 +483,36 @@ Successfully installed olefile-0.44 pillow-4.3.0
 raise ValueError('Missing scheme in request url: %s' % self._url)
 ```
 
+因为此时需要的值url为数组：
+
+```python
+article["front_img_url"]= front_img_url
+改为
+article["front_img_url"]= [front_img_url]
+```
+
+在pipeline.py中自定义图片路径存储pipeline：
+
+```python
+from scrapy.pipelines.images import ImagesPipeline  #继承ImagePipeline
+class  ArticleImagePipeline(ImagesPipeline):   #继承ImagePipeline
+    def item_completed(self, results, item, info):
+        for ok,value in results:
+            image_file_path = value['path']   # 取出图片存储路径
+            item['front_img_path']=image_file_path  #将图片存储路径存入item中
+        return item
+```
+
+在setting.py中使用自定义的pipeline:
+
+```python
+ITEM_PIPELINES = {     #此处代码本来就用，只需要解除注释
+   'articalScrapy.pipelines.ArticalscrapyPipeline': 300,
+   'articalScrapy.pipelines.ArticleImagePipeline': 2,
+   # 'scrapy.pipelines.images.ImagesPipeline': 1,   # 设置image的pipeline,数字越小优先级越高
+}
+```
+
 
 
 
