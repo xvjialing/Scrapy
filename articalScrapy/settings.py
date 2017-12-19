@@ -66,8 +66,8 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {     #此处代码本来就用，只需要解除注释
-   'articalScrapy.pipelines.ArticalscrapyPipeline': 300,
-   'articalScrapy.pipelines.ArticleImagePipeline': 2,
+   'articalScrapy.pipelines.JsonExporterPipeline': 2,
+   'articalScrapy.pipelines.ArticleImagePipeline': 1,
    # 'scrapy.pipelines.images.ImagesPipeline': 1,   # 设置image的pipeline,数字越小优先级越高
 }
 IMAGES_URLS_FIELD = "front_img_url"   #设置图片的参数

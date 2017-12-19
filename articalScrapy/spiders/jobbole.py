@@ -3,6 +3,7 @@ import scrapy
 import re
 from scrapy.http import Request
 from urllib import parse
+import datetime
 
 from articalScrapy.items import JobBoleArticleItem
 from articalScrapy.utils.common import get_md5
@@ -32,13 +33,13 @@ class JobboleSpider(scrapy.Spider):
         for post_node in post_nodes:
             img_url= post_node.css("img::attr(src)").extract_first("")
             post_url = post_node.css("::attr(href)").extract_first("")
-            print(parse.urljoin(response.url,post_url))
+            # print(parse.urljoin(response.url,post_url))
             yield Request(url=parse.urljoin(response.url,post_url),callback=self.parse_detail,meta={"front_img_url":img_url})
 
         #提取下一页url并交给scrapy下载
         next_urls = response.css(".next.page-numbers::attr(href)").extract_first("")
         if next_urls:
-            print(next_urls)
+            # print(next_urls)
             yield Request(url=next_urls, callback=self.parse)
 
     def parse_detail(self, response):
@@ -85,6 +86,10 @@ class JobboleSpider(scrapy.Spider):
         article["title"]=title
         article["url"]= response.url
         article["url_object_id"]= get_md5(response.url)
+        try:
+            create_date=datetime.datetime.strptime(create_date,"%Y%M%D").date()
+        except Exception as e:
+            create_date =datetime.datetime.now().date()
         article["create_date"]= create_date
         article["front_img_url"]= [front_img_url]
         article["praise_nums"]= praise_nums
