@@ -8,6 +8,8 @@ import datetime
 from articalScrapy.items import JobBoleArticleItem
 from articalScrapy.utils.common import get_md5
 
+from scrapy.loader import ItemLoader
+
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
     allowed_domains = ['blog.jobbole.com']
@@ -98,6 +100,24 @@ class JobboleSpider(scrapy.Spider):
         article["tags"]= tags
         article["content"]= content
 
+        # 通过item_loader加载item
+        item_loader = ItemLoader(item= JobBoleArticleItem(),response= response)
+        # item_loader.add_xpath()  #与add_css()一样
+        item_loader.add_value("front_img_url",[response.meta.get("front_img_url","")])  #将通过css样式匹配的值赋给"title"
+        item_loader.add_css("title",".entry-header h1::text")
+        item_loader.add_css("create_date","p.entry-meta-hide-on-mobile::text")
+        item_loader.add_css("praise_nums","span.vote-post-up h10::text")
+        item_loader.add_css("fav_nums","span.bookmark-btn::text")
+        item_loader.add_css("comment_nums","a[href='#article-comment'] span::text")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_css("tags","p.entry-meta-hide-on-mobile a::text")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_value("url",response.url)  #直接将值赋给"url"
+        item_loader.add_value("url_object_id",get_md5(response.url))
+
+        article = item_loader.load_item()
+
 
         yield article
-        pass

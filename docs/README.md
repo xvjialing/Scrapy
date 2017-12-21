@@ -601,6 +601,11 @@ MYSQL_PORT = 3336
 编写异步插入爬虫：
 
 ```python
+from twisted.enterprise import adbapi
+
+import MySQLdb
+import MySQLdb.cursors
+
 class MysqlTwistedPipeline(object):
     def __init__(self,dbpool):
         self.dbpool = dbpool
@@ -643,9 +648,11 @@ class MysqlTwistedPipeline(object):
 
 ***
 
+## ItemLoder
 
+> Item Loaders提供了一种便捷的方式填充抓取到的 Items 。 虽然Items可以使用自带的类字典形式API填充，但是Items Loaders提供了更便捷的API， 可以分析原始数据并对Item进行赋值。
 
-
+在爬虫中
 
 
 
