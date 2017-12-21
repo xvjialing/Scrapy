@@ -551,6 +551,98 @@ class JsonExporterPipeline(object):
         return item
 ```
 
+***
+
+## 保存数据到mysql数据库
+
+安装mysql驱动:
+
+```shell
+pip install mysqlclient
+```
+
+mac系统此时需要安装一个软件
+
+```shell
+xcode-select --install
+```
+
+*同步写入mysql*
+
+```python
+class MysqlPipeline(object):
+    #采用同步的机制写入mysql
+    def __init__(self):
+        self.conn= MySQLdb.connect("121.196.194.14","root","lytech","articlespider", 3336, charset="utf8", use_unicode=True)
+        self.cursor = self.conn.cursor()
+
+    def process_item(self, item, spider):
+        insert_sql="""
+            insert into article(title,url,create_date,fav_nums)
+            VALUES (%s,%s,%s,%s)
+        """
+        self.cursor.execute(insert_sql,(item["title"],item["url"],item["create_date"],item["fav_nums"]))
+        self.conn.commit()
+        return item
+```
+
+上面的不同使用mysql的方式会在数据量大的时候造成阻塞。下面用twisted提供的mysql连接池实现mysql异步操作。
+
+先在setting.py中加入mysql的配置	
+
+```python
+MYSQL_HOST = "121.196.194.14"
+MYSQL_DBNAME = "articlespider"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = "lytech"
+MYSQL_PORT = 3336
+```
+
+编写异步插入爬虫：
+
+```python
+class MysqlTwistedPipeline(object):
+    def __init__(self,dbpool):
+        self.dbpool = dbpool
+
+    @classmethod
+    def from_settings(cls,settings):  # 读入setting.py文件中的mysql配置
+        dbparams=dict(host = settings["MYSQL_HOST"],
+            db = settings["MYSQL_DBNAME"],
+            user = settings["MYSQL_USER"],
+            passwd = settings["MYSQL_PASSWORD"],
+            port = settings["MYSQL_PORT"],
+            charset='utf8',
+            cursorclass =MySQLdb.cursors.DictCursor,
+             use_unicode=True)
+
+        dbpool= adbapi.ConnectionPool("MySQLdb", **dbparams)
+
+        return cls(dbpool)
+
+    def process_item(self, item, spider):
+        # 使用twisted将mysql插入变成异步
+        query= self.dbpool.runInteraction(self.do_insert,item)
+        query.addErrback(self.handle_error)  # 处理异常
+
+    def handle_error(self,failure):
+        # 处理异步插入的错误
+        print(failure)
+
+    def do_insert(self,cursor,item):
+        # 执行具体插入
+        insert_sql = """
+                    insert into article(title,url,create_date,fav_nums,comment_nums,praise_nums,tag,content,front_img_url,url_object_id)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+        cursor.execute(insert_sql, (item["title"], item["url"], item["create_date"],item["fav_nums"],item["comment_nums"],
+                                    item["praise_nums"],item["tags"],item["content"],item["front_img_url"],item["url_object_id"]))
+```
+
+这样，将爬取的数据存入mysql就实现了。
+
+***
+
 
 
 
