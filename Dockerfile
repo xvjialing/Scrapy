@@ -1,4 +1,4 @@
-FROM python:3-slim
+FROM python:3-slim-jessie
 
 RUN pip install scrapy==1.4.0
 
