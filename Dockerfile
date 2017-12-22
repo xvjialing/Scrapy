@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3-slim-stretch
 
 RUN pip install scrapy==1.4.0
 
