@@ -5,7 +5,7 @@ from scrapy.http import Request
 from urllib import parse
 import datetime
 
-from articalScrapy.items import JobBoleArticleItem
+from articalScrapy.items import JobBoleArticleItem,ArticleItemLoader
 from articalScrapy.utils.common import get_md5
 
 from scrapy.loader import ItemLoader
@@ -66,42 +66,42 @@ class JobboleSpider(scrapy.Spider):
         # tags = ",".join(tag_list)
 
         #css 选择器
-        front_img_url = response.meta.get("front_img_url","")   # 文章封面图
-        title = response.css(".entry-header h1::text").extract()[0]   # ::text是css伪类选择器
-        create_date = response.css("p.entry-meta-hide-on-mobile::text").extract()[0].replace("·", "").strip()
-        praise_nums =response.css("span.vote-post-up h10::text").extract()[0]
-        re_match= re.match(".*(\d+).*", response.css("span.bookmark-btn::text").extract()[0])
-        if re_match:
-            fav_nums=int(re_match.group(1))
-        else:
-            fav_nums = 0
-        re_match = re.match(".*(\d+).*", response.css("a[href='#article-comment'] span::text").extract()[0])
-        if re_match:
-            comment_nums =re_match.group(1)
-        else:
-            comment_nums = 0
-        content = response.css("div.entry").extract()[0]
-        tag_list = response.css("p.entry-meta-hide-on-mobile a::text").extract()
-        tag_list = [element for element in tag_list if not element.strip().endswith("评论")]
-        tags = ",".join(tag_list)
-
-        article["title"]=title
-        article["url"]= response.url
-        article["url_object_id"]= get_md5(response.url)
-        try:
-            create_date=datetime.datetime.strptime(create_date,"%Y%M%D").date()
-        except Exception as e:
-            create_date =datetime.datetime.now().date()
-        article["create_date"]= create_date
-        article["front_img_url"]= [front_img_url]
-        article["praise_nums"]= praise_nums
-        article["comment_nums"]= comment_nums
-        article["fav_nums"]= fav_nums
-        article["tags"]= tags
-        article["content"]= content
+        # front_img_url = response.meta.get("front_img_url","")   # 文章封面图
+        # title = response.css(".entry-header h1::text").extract()[0]   # ::text是css伪类选择器
+        # create_date = response.css("p.entry-meta-hide-on-mobile::text").extract()[0].replace("·", "").strip()
+        # praise_nums =response.css("span.vote-post-up h10::text").extract()[0]
+        # re_match= re.match(".*(\d+).*", response.css("span.bookmark-btn::text").extract()[0])
+        # if re_match:
+        #     fav_nums=int(re_match.group(1))
+        # else:
+        #     fav_nums = 0
+        # re_match = re.match(".*(\d+).*", response.css("a[href='#article-comment'] span::text").extract()[0])
+        # if re_match:
+        #     comment_nums =re_match.group(1)
+        # else:
+        #     comment_nums = 0
+        # content = response.css("div.entry").extract()[0]
+        # tag_list = response.css("p.entry-meta-hide-on-mobile a::text").extract()
+        # tag_list = [element for element in tag_list if not element.strip().endswith("评论")]
+        # tags = ",".join(tag_list)
+        #
+        # article["title"]=title
+        # article["url"]= response.url
+        # article["url_object_id"]= get_md5(response.url)
+        # try:
+        #     create_date=datetime.datetime.strptime(create_date,"%Y%M%D").date()
+        # except Exception as e:
+        #     create_date =datetime.datetime.now().date()
+        # article["create_date"]= create_date
+        # article["front_img_url"]= [front_img_url]
+        # article["praise_nums"]= praise_nums
+        # article["comment_nums"]= comment_nums
+        # article["fav_nums"]= fav_nums
+        # article["tags"]= tags
+        # article["content"]= content
 
         # 通过item_loader加载item
-        item_loader = ItemLoader(item= JobBoleArticleItem(),response= response)
+        item_loader = ArticleItemLoader(item= JobBoleArticleItem(),response= response)
         # item_loader.add_xpath()  #与add_css()一样
         item_loader.add_value("front_img_url",[response.meta.get("front_img_url","")])  #将通过css样式匹配的值赋给"title"
         item_loader.add_css("title",".entry-header h1::text")

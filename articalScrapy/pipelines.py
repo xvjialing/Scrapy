@@ -99,7 +99,8 @@ class MysqlTwistedPipeline(object):
 
 class  ArticleImagePipeline(ImagesPipeline):   #继承ImagePipeline
     def item_completed(self, results, item, info):
-        for ok,value in results:
-            image_file_path = value['path']   # 取出图片存储路径
-            item['front_img_path']=image_file_path  #将图片存储路径存入item中
-        return item
+        if "front_img_path" in item:  # 判断"front_img_path"是否存在
+            for ok,value in results:
+                image_file_path = value['path']   # 取出图片存储路径
+                item['front_img_path']=image_file_path  #将图片存储路径存入item中
+            return item

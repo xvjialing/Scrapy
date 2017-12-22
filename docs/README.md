@@ -652,7 +652,159 @@ class MysqlTwistedPipeline(object):
 
 > Item Loaders提供了一种便捷的方式填充抓取到的 Items 。 虽然Items可以使用自带的类字典形式API填充，但是Items Loaders提供了更便捷的API， 可以分析原始数据并对Item进行赋值。
 
-在爬虫中
+在爬虫中：初始化ItemLoader
+
+```python
+from scrapy.loader import ItemLoader
+
+# 通过item_loader加载item
+        item_loader = ItemLoader(item= JobBoleArticleItem(),response= response)
+        # item_loader.add_xpath()  #与add_css()一样
+        item_loader.add_value("front_img_url",[response.meta.get("front_img_url","")])  #将通过css样式匹配的值赋给"title"
+        item_loader.add_css("title",".entry-header h1::text")
+        item_loader.add_css("create_date","p.entry-meta-hide-on-mobile::text")
+        item_loader.add_css("praise_nums","span.vote-post-up h10::text")
+        item_loader.add_css("fav_nums","span.bookmark-btn::text")
+        item_loader.add_css("comment_nums","a[href='#article-comment'] span::text")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_css("tags","p.entry-meta-hide-on-mobile a::text")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_css("content","div.entry")
+        item_loader.add_value("url",response.url)  #直接将值赋给"url"
+        item_loader.add_value("url_object_id",get_md5(response.url))
+
+        article = item_loader.load_item()
+```
+
+在items.py中对item加入处理逻辑：
+
+```python
+from scrapy.loader.processors import MapCompose, TakeFirst
+
+def add_jobbole(value):
+    return value+"-jobbole"
+
+
+def date_convert(value):
+    try:
+        create_date = datetime.datetime.strptime(value, "%Y%M%D").date()
+    except Exception as e:
+        create_date = datetime.datetime.now().date()
+
+    return create_date
+
+class JobBoleArticleItem(scrapy.Item):
+    url = scrapy.Field()
+    url_object_id = scrapy.Field()
+    front_img_url = scrapy.Field()
+    front_img_path = scrapy.Field()
+    title = scrapy.Field(
+        input_processor =MapCompose(add_jobbole) # 值的预处理
+    )
+    create_date = scrapy.Field(
+        input_processor = MapCompose(date_convert),
+        output_processor = TakeFirst()  # 返回的值取list的第一个值
+    )
+    praise_nums = scrapy.Field()
+    fav_nums = scrapy.Field()
+    comment_nums = scrapy.Field()
+    content = scrapy.Field()
+    tags = scrapy.Field()
+```
+
+这样取到的值就是经过input_processor与output_processor处理的。
+
+但为每个值都设置一个`output_processor = TakeFirst()`太麻烦，所以这里需要自定义一个ItemLoader
+
+items.py:
+
+```python
+from scrapy.loader import ItemLoader
+
+class ArticleItemLoader(ItemLoader):
+    # 自定义ItemLoader
+    default_output_processor = TakeFirst()
+```
+
+并在jobble.py中将默认的ItemLoader替换：
+
+```python
+from articalScrapy.items import ArticleItemLoader
+
+item_loader = ItemLoader(item= JobBoleArticleItem(),response= response)
+改为
+item_loader = ArticleItemLoader(item= JobBoleArticleItem(),response= response)
+```
+
+最终items.py:
+
+```python
+import scrapy
+from scrapy.loader.processors import MapCompose, TakeFirst,Join
+from scrapy.loader import ItemLoader
+import datetime
+import re
+
+
+def date_convert(value):
+    try:
+        create_date = datetime.datetime.strptime(value, "%Y%M%D").date()
+    except Exception as e:
+        create_date = datetime.datetime.now().date()
+
+    return create_date
+
+def nums_convert(value):
+    re_match = re.match(".*(\d+).*", value)
+    if re_match:
+        nums = int(re_match.group(1))
+    else:
+        nums = 0
+    return nums
+
+def tags_convert(value):
+    if "评论" in value:
+        return ""
+    else:
+        return value
+
+def return_value(value):
+    return value
+
+class ArticleItemLoader(ItemLoader):
+    # 自定义ItemLoader
+    default_output_processor = TakeFirst()
+
+
+class JobBoleArticleItem(scrapy.Item):
+    url = scrapy.Field()
+    url_object_id = scrapy.Field()
+    front_img_url = scrapy.Field(
+        output_processor=MapCompose(return_value)
+    )
+    front_img_path = scrapy.Field()
+    title = scrapy.Field()
+    create_date = scrapy.Field(
+        input_processor = MapCompose(date_convert)
+    )
+    praise_nums = scrapy.Field(
+        input_processor=MapCompose(nums_convert)
+    )
+    fav_nums = scrapy.Field(
+        input_processor=MapCompose(nums_convert)
+    )
+    comment_nums = scrapy.Field(
+        input_processor=MapCompose(nums_convert)
+    )
+    content = scrapy.Field()
+    tags = scrapy.Field(
+        input_processor=MapCompose(tags_convert),
+        output_processor=Join(",")
+    )
+```
+
+
 
 
 

@@ -1,24 +1,8 @@
-FROM debian:stretch
-MAINTAINER Ayaz BADOURALY <ayaz.badouraly@via.ecp.fr>
+FROM python:3.6.4-alpine3.7
 
-RUN apt-get update && \
-	apt-get install --assume-yes --no-install-recommends \
-		gcc \
-		libffi-dev \
-		libssl-dev \
-		libxml2-dev \
-		libxslt1-dev \
-		python-pip \
-		python-dev \
-		zlib1g-dev && \
-	apt-get clean && \
-	rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pip install scrapy==1.4.0
 
-RUN pip install --upgrade pip && \
-	pip install --upgrade \
-		setuptools \
-		wheel && \
-	pip install --upgrade scrapy
+WORKDIR /workspace
 
 RUN mkdir -p /app && chmod -R 777 /app
 WORKDIR /app
