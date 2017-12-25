@@ -817,9 +817,29 @@ class JobBoleArticleItem(scrapy.Item):
 | 500     | 服务器错误         |
 | 503     | 服务器停机或正在维护    |
 
+接下来开始爬取知乎
 
+首先分析知乎的登陆方法，这里使用Firefox进行分析，根据手机与邮箱会有两个不同的登陆连接：`手机号：https://www.zhihu.com/login/phone_num`与`邮箱：https://www.zhihu.com/login/email`
 
+手机号登陆：
 
+![手机号登陆](../img/phone_login.jpg)
 
+邮箱登陆：
 
+![邮箱登陆](../img/email_login.jpg)
+
+而_xsrf就在登陆页的网页源代码中：
+
+```html
+<input type="hidden" name="_xsrf" value="35626566356431662d343830322d346564352d613230632d613232366530353466343033"/>
+```
+
+安装requests：
+
+```shell
+pip install requests
+```
+
+在utils文件夹中创建zhihu_login_requests.py:
 

@@ -100,8 +100,21 @@ IMAGE_MIN_HEIGHT= 100 #设置图片尺寸最小为100*100
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-MYSQL_HOST = "192.168.0.114"
-MYSQL_DBNAME = "articlespider"
+# MYSQL_HOST = "192.168.0.114"
+# MYSQL_DBNAME = "articlespider"
+# MYSQL_USER = "root"
+# MYSQL_PASSWORD = "xjl1994920"
+# MYSQL_PORT = 3336
+
+# MYSQL_HOST = "121.196.194.14"
+# MYSQL_DBNAME = "articlespider"
+# MYSQL_USER = "root"
+# MYSQL_PASSWORD = "lytech"
+# MYSQL_PORT = 3336
+
+# vultr
+MYSQL_HOST = "172.17.0.4"
+MYSQL_DBNAME = "jobbole"
 MYSQL_USER = "root"
-MYSQL_PASSWORD = "xjl1994920"
+MYSQL_PASSWORD = "123456789"
 MYSQL_PORT = 3336
