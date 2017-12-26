@@ -26,7 +26,7 @@
 
 ## 网站树结构
 
-![网站结构](../img/tree.jpg)
+![网站结构](http://p1i22rxiz.bkt.clouddn.com/tree.jpg)
 
 * 深度优先算法
 
