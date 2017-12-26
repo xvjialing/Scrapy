@@ -24,6 +24,16 @@ header={
 
 session=requests.session()
 session.cookies = cookielib.LWPCookieJar(filename='cookies.txt')
+try:
+    session.cookies.load(ignore_discard=True)
+except:
+    print("cookie未能加载")
+
+def get_index():
+    response = session.get("https://www.zhihu.com/#signin", headers=header)
+    with open("index_page.html","wb") as f:
+        f.write(response.text.encode("utf-8"))
+    print("ok")
 
 def get_xsrf():
     #获取xsrf
@@ -37,7 +47,18 @@ def get_xsrf():
 
     return xsrf
 
+def is_login():
+    # 通过个人中心页面的状态码判断是否登陆
+    inbox_url="https://www.zhihu.com/inbox"
+    response= session.get(inbox_url,headers=header,allow_redirects=False)
+    if response.status_code != 200:
+        return False
+    else:
+        return True
+
+
 def get_captcha():
+    # 获取验证码
     t = str(int(time.time() * 1000))
     captcha_url = 'https://www.zhihu.com/captcha.gif?r=' + t + "&type=login"
     response = session.get(captcha_url, headers=header)
@@ -60,11 +81,23 @@ def zhihu_login(account,password):
             "captcha": get_captcha(),
             "phone_num": account,
         }
-        response=session.post(post_url,post_data,headers=header)
-        print(response.text)
-        session.cookies.save()
-        jsontext=json.loads(response.text)
-        print(jsontext)
+    else:
+        if "@" in account:
+            print("邮箱登陆")
+            post_url = "https://www.zhihu.com/login/email"
+            post_data = {
+                "_xsrf": get_xsrf(),
+                "password": password,
+                "captcha": get_captcha(),
+                "email": account,
+            }
+    response = session.post(post_url, post_data, headers=header)
+    print(response.text)
+    session.cookies.save()
+    # jsontext = json.loads(response.text)
+    # print(jsontext)
 
-zhihu_login("1111111111","1111111")
+# zhihu_login("11111111","11111111")
 
+# get_index()
+is_login()
