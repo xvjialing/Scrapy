@@ -823,11 +823,11 @@ class JobBoleArticleItem(scrapy.Item):
 
 手机号登陆：
 
-![手机号登陆](../img/phone_login.jpg)
+![手机号登陆](http://p1i22rxiz.bkt.clouddn.com/phone_login.jpg)
 
 邮箱登陆：
 
-![邮箱登陆](../img/email_login.jpg)
+![邮箱登陆](http://p1i22rxiz.bkt.clouddn.com/email_login.jpg)
 
 而_xsrf就在登陆页的网页源代码中：
 
